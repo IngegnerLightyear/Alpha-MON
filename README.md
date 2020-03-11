@@ -11,7 +11,7 @@ Once installed, please load the kernel modules, reserve a suitable number of hug
 
 You can install this software with:
 ``` 
-git clone https://github.com/marty90/traffic_anon
+git clone https://github.com/IngegnerLightyear/A-MON.git
 ```
 
 And compile with:
