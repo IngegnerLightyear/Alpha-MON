@@ -4,9 +4,6 @@ This software process network traffic on input interfaces to remove privacy sens
 Then, it transmits anonymized traffic on the output interfaces.
 This software is higly configurable, to allow one to decide which fields and subnets to anonymize. 
 
-For information about Traffic Anonymizer please write to [martino.trevisan@polito.it](mailto:martino.trevisan@polito.it).
-
-
 ## Dependencies
 
 You need [DPDK](http://dpdk.org/) (version 19).
