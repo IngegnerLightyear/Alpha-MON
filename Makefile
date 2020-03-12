@@ -8,7 +8,7 @@ RTE_TARGET ?= x86_64-native-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
 
 # App name
-APP = traffic_anon
+APP = a_mon
 
 # Flags
 CFLAGS += -O3
