@@ -22,7 +22,7 @@ make
 ## Run
 Just run with:
 ```
-sudo ./build/traffic_anon -- -c <ini_file>
+sudo ./build/a_mon -- -c <ini_file>
 ```
 
 By default, it uses all cores and NICs of your system. Check DPDK parameters to control this behavior.
