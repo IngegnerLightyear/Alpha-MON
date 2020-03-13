@@ -109,11 +109,11 @@ static int main_loop(__attribute__((unused)) void * arg){
             printf("CHECK:          anon_ip_key_mode -> %s\n", out_interface[port_cnt].anon_ip_key_mode);
             printf("CHECK:          anon_ip_key -> %s\n", out_interface[port_cnt].anon_ip_key);
             printf("CHECK:          anon_subnet_file -> %s\n", out_interface[port_cnt].anon_subnet_file);
-            printf("CHECK:          anon_l4_enabled -> %d\n", out_interface[port_cnt].anon_l4_enabled);
-            printf("CHECK:          anon_l4_whitelist_tls -> %d\n", out_interface[port_cnt].anon_l4_whitelist_tls);
-            printf("CHECK:          anon_l4_whitelist_quic -> %d\n", out_interface[port_cnt].anon_l4_whitelist_quic);
-            printf("CHECK:          anon_l4_whitelist_dns -> %d\n", out_interface[port_cnt].anon_l4_whitelist_dns);
-            printf("CHECK:          anon_l4_whitelist_http -> %d\n", out_interface[port_cnt].anon_l4_whitelist_http);
+            printf("CHECK:          engine -> %d\n", out_interface[port_cnt].engine);
+            printf("CHECK:              dns -> %d\n", out_interface[port_cnt].dns);
+            printf("CHECK:              tls -> %d\n", out_interface[port_cnt].tls);
+            printf("CHECK:          alpha -> %d\n", out_interface[port_cnt].alpha);
+            printf("CHECK:          delta -> %d\n", out_interface[port_cnt].delta);
             printf("\n");
         }
     }
@@ -523,39 +523,33 @@ printf("CHECK:  section %s, name %s\n", section ,name);
                 printf ("ANON:     %s: %s\n", name,value);
                 strcpy(config[ret].anon_subnet_file, value);
                 }
-		/* L4 */
-                else if (strcmp(name, "enabled") == 0) {
+		/* Protocols */
+                else if (strcmp(name, "engine") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].anon_l4_enabled = atoi(value);
-                }else if (strcmp(name, "whitelist_tls") == 0) {
+                config[ret].engine = atoi(value);
+                }else if (strcmp(name, "dns") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].anon_l4_whitelist_tls = atoi(value);
-                }else if (strcmp(name, "whitelist_quic") == 0) {
+                config[ret].dns = atoi(value);
+                }else if (strcmp(name, "tls") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].anon_l4_whitelist_quic = atoi(value);
-                }else if (strcmp(name, "whitelist_dns") == 0) {
-                printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].anon_l4_whitelist_dns = atoi(value);
-                }else if (strcmp(name, "whitelist_http") == 0) {
-                printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].anon_l4_whitelist_http = atoi(value);
+                config[ret].tls = atoi(value);
                 }
 		/* K-anon */
-		else if (strcmp(name, "k_anon") == 0) {
+		else if (strcmp(name, "alpha") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                config[ret].k_anon = atoi(value);
+                config[ret].alpha = atoi(value);
                 }
-		else if (strcmp(name, "k_delta") == 0) {
+		else if (strcmp(name, "delta") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
-                if(config[ret].k_anon!=0)
+                if(config[ret].alpha!=0)
 			if(atoi(value)>0)
-				config[ret].k_delta = atoi(value);
+				config[ret].delta = atoi(value);
 			else{
-				printf ("ERROR:     Wrong K-Anon configuration\n");
+				printf ("ERROR:     Wrong ALPHA/DELTA pair configuration\n");
                         	return 1;
 			}
 		else
-			config[ret].k_delta = atoi(value);
+			config[ret].delta = atoi(value);
                 }
         }
         else if (strcmp(section, "interface_conf") == 0)

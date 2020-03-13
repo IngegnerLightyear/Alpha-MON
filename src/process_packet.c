@@ -149,8 +149,8 @@ void process_packet_ip (struct rte_mbuf * packet, out_interface_sett interface_s
             }
         }
         /* Apply K-anon */
-        if(interface_setting.k_anon!=0)
-            multiplexer_proto(ipv4_header, NULL,  packet, core, tp, id, interface_setting.k_anon, interface_setting.k_delta, &crypto_data[core][id]);
+        if(interface_setting.engine!=0)
+            multiplexer_proto(ipv4_header, NULL,  packet, core, tp, id, interface_setting, &crypto_data[core][id]);
     }
     /* Is IPv6 */
     else if(ether_type == 0x86DD){
@@ -201,7 +201,7 @@ void process_packet_ip (struct rte_mbuf * packet, out_interface_sett interface_s
         }
         /* Apply K-anon */
         // NOT FULLY SUPPORTED YET
-        //if(interface_setting.k_anon!=0)
+        //if(interface_setting.engine!=0)
             //multiplexer_proto(ipv4_header, NULL,  packet, core, tp, id, interface_setting.k_anon, interface_setting.k_delta, &crypto_data[core][id]);
     }
 }

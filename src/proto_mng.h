@@ -118,7 +118,7 @@ hash_struct flow_db[MAX_CORES][MAX_INTERFACES];
 
 /* Functions for protocols */
 void proto_init(int nb_sys_cores);
-void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, int k_anon, int k_delta, crypto_ip *);
+void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, out_interface_sett, crypto_ip *);
 void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, flow newPacket, hash_struct *flow_db, int k_anon, int k_delta, crypto_ip *, int, int);
 void remove_dnsquery_name (char * buff);
 void remove_dns_name (struct rte_mbuf * packet, ret_info info);

@@ -22,7 +22,7 @@ void proto_init(int nb_sys_cores)
 }
 
 
-void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, int k_anon, int k_delta, crypto_ip *self)
+void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, out_interface_sett interface_setting, crypto_ip *self)
 {
     struct tcp_hdr * tcp_header;
     struct udp_hdr * udp_header;
@@ -46,12 +46,10 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                            /* Managing DNS Proto*/
-                            if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                            if(interface_setting.tls!=0)
                             {
-                                //dnsEntry(packet, 0, ipv4_header, NULL, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
+                                //TLS management TODO
                             }
-                            /* Since the protocol is not secure, the payload TCP is deleted */
                             else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
                             break;
@@ -65,10 +63,12 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                
-                            if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                            if(interface_setting.dns!=0)
                             {
-                                dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
+                                if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                                {
+                                    dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
+                                }
                             }
                             else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
@@ -99,9 +99,9 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                                 newPacket.protocol = ipv6_header->proto;
                                 newPacket.timestamp = tp.tv_sec;
 
-                                if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                                if(interface_setting.tls!=0)
                                 {
-                                    //dnsEntry(packet, 0, NULL, ipv6_header, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
+                                    //TLS management TODO
                                 }
                                 else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                     remove_payload(packet, sizeof(struct ipv6_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
@@ -121,10 +121,13 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                                 newPacket.protocol = ipv6_header->proto;
                                 newPacket.timestamp = tp.tv_sec;
 
-                                if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                                if(interface_setting.dns!=0)
                                 {
-                                    //dnsEntry(packet, 1, NULL, ipv6_header, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
+                                    if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                                    {
+                                        //dnsEntry(packet, 1, NULL, ipv6_header, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
 
+                                    }
                                 }
                                 else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                     remove_payload(packet, sizeof(struct ipv6_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));

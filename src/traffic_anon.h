@@ -95,13 +95,11 @@ typedef struct out_interface_sett
   char anon_ip_key [MAX_STR];
   int anon_ip_rotation_delay;
   char anon_subnet_file [MAX_STR];
-  int anon_l4_enabled;
-  int anon_l4_whitelist_tls;
-  int anon_l4_whitelist_quic;
-  int anon_l4_whitelist_dns;
-  int anon_l4_whitelist_http;
-  int k_anon;
-  int k_delta;
+  int engine;
+  int dns;
+  int tls;
+  int alpha;
+  int delta;
 } out_interface_sett;
 
 typedef struct in_interface_sett
