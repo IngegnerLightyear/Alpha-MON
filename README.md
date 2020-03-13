@@ -22,14 +22,14 @@ make
 ## Run
 Just run with:
 ```
-sudo ./build/traffic_anon -- -c <ini_file>
+sudo ./build/a_mon -- -c <ini_file>
 ```
 
 By default, it uses all cores and NICs of your system. Check DPDK parameters to control this behavior.
 
 ## How it works
 
-Traffic Anonymizer reads packets from input NICs, process them, and sends them on the output port.
+⍺-MON reads packets from input NICs, process them, and sends them on the output port.
 
 ### Input/Output mapping
 
