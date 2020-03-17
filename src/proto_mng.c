@@ -21,7 +21,9 @@ void proto_init(int nb_sys_cores)
 	}
 }
 
-
+// For Protocol use:
+// 0 = TCP
+// 1 = UDP
 void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, out_interface_sett interface_setting, crypto_ip *self)
 {
     struct tcp_hdr * tcp_header;
@@ -62,13 +64,15 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.out_port = htons(udp_header->dst_port);
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
-
+                
                             if(interface_setting.dns!=0)
                             {
-                                if(newPacket.in_port == DNS || newPacket.out_port == DNS)
+                                if(proto_detector(packet, 1, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == DNS)
                                 {
                                     dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
                                 }
+                                else
+                                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
                             }
                             else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
@@ -79,7 +83,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             break;
          	}
 	}
-	else if(ipv6_header!=NULL)//ipv6
+	else if(ipv6_header!=NULL)//ipv6 TO BE CORRECTED
 	{
 		switch (ipv6_header->proto)
                 {
@@ -125,8 +129,10 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                                 {
                                     if(newPacket.in_port == DNS || newPacket.out_port == DNS)
                                     {
-                                        //dnsEntry(packet, 1, NULL, ipv6_header, newPacket, &flow_db[core][id], k_anon, k_delta, self, id, core);
-
+                                        /*if(proto_detector(packet, 1, ipv4_header, NULL, newPacket) == DNS)
+                                            dnsEntry(packet, 1, NULL, ipv6_header, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
+                                        else
+                                            remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));*/
                                     }
                                 }
                                 else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
@@ -325,13 +331,16 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 ReadName(buff,buffstart,&stop);
                 if(DEBUG==1)
                 printf("ANS:    Pars del nome\n");
-//                printf("%s\n", answers[i].name);
+                //printf("%s\n", answers[i].name);
                 buff += stop;
                 answers[i].resource = (r_data*)(buff);
                 if(DEBUG==1)
                 printf("ANS:    Pars r_data\n");
                 // MOD for +2 bytes of typedef struct statement
-                buff += (sizeof(r_data)-2);
+                //buff += (sizeof(r_data)-2);
+                buff += (sizeof(unsigned short)+sizeof(unsigned short)+sizeof(unsigned int)+sizeof(unsigned short));
+                if(DEBUG==1)
+                printf("ANS:    Pars r_data->type = %d\n",ntohs(answers[i].resource->type));
                 if(ntohs(answers[i].resource->type) == 1) //if its an ipv4 address
                 {
                     if(DEBUG==1)
@@ -363,10 +372,17 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                     answers[i].rdata[ntohs(answers[i].resource->data_len)] = '\0';
                     buff += ntohs(answers[i].resource->data_len);
                 }
+                else if(ntohs(answers[i].resource->type) == 5)
+                {
+                    if(DEBUG==1)
+                    printf("ANS:    Pars CNAME\n");
+                    ReadName(buff,buffstart,&stop);
+                    buff+=ntohs(answers[i].resource->data_len);
+                }
                 // TO BE IMPLEMENTED
                 else if(ntohs(answers[i].resource->type) == 28)
                 {
-                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr)+12);
                     return;
                     buff+=ntohs(answers[i].resource->data_len);
                 }
@@ -376,7 +392,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                     //TEST
                     //ReadName(buff,buffstart,&stop);
                     //buff += stop;
-                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr)+12);
                     return;
                 }
             }
@@ -437,7 +453,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 {
                     if(DEBUG==1)
                     printf("ANS:    Skip ipv6\n");
-                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr)+12);
                     return;
                     buff+=ntohs(addit[i].resource->data_len);
                 }
@@ -447,7 +463,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                     //TEST
                     //ReadName(buff,buffstart,&stop);
                     //buff+=stop;
-                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr)+12);
                     return;
                 }
             }
