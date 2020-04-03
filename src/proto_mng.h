@@ -21,6 +21,7 @@
 //#include "hash_calculator.h"
 #include <unistd.h>    //getpid
 #include "dns_mng.h"
+#include "tls_mng.h"
 #include "traffic_anon.h"
 #include "hash_calculator.h"
 #include "process_packet.h"
@@ -41,7 +42,7 @@
 #define FLOW_TABLE_SIZE 10000//900
 #define NAME_DNS 500
 
-#define DEBUG 0
+#define DEBUG 1
 
 /* Types */
 
@@ -113,7 +114,7 @@ typedef struct flow
 
 
 /* Variables */
-hash_struct flow_db[MAX_CORES][MAX_INTERFACES];
+hash_struct flow_db[MAX_CORES];
 
 
 /* Functions for protocols */

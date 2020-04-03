@@ -8,16 +8,13 @@ void proto_init(int nb_sys_cores)
 {
 	for(int i=0; i<nb_sys_cores; i++)
 	{
-        	for(int j=0; j<MAX_INTERFACES; j++)
-		{
-			flow_db[i][j].bitMap=malloc(FLOW_TABLE_SIZE*sizeof(int));
-			if(flow_db[i][j].bitMap == NULL)
+			flow_db[i].bitMap=malloc(FLOW_TABLE_SIZE*sizeof(int));
+			if(flow_db[i].bitMap == NULL)
 				return;
-			flow_db[i][j].table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
-			if(flow_db[i][j].table == NULL)
+			flow_db[i].table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
+			if(flow_db[i].table == NULL)
 				return;
-            		table_init(&flow_db[i][j]);
-		}
+            		table_init(&flow_db[i]);
 	}
 }
 
@@ -48,11 +45,16 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                            if(interface_setting.tls!=0)
+                            /*if(interface_setting.tls!=0)
                             {
-                                //TLS management TODO
+                                if(proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == 443)
+                                {
+                                    printf("A-MON:   client hello\n");
+                                }
+                                else
+                                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
                             }
-                            else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
+                            else*/ if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
                             break;
                 	case UDP:
@@ -69,7 +71,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             {
                                 if(proto_detector(packet, 1, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == DNS)
                                 {
-                                    dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
+                                    dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core], interface_setting.alpha, interface_setting.delta, self, id, core);
                                 }
                                 else
                                     remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
@@ -163,6 +165,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
     
     /* Retrieve DNS Header */
     dns = dns_header_extractor(packet, protocol, ipv4_header, ipv6_header);
+    
     
     
     if(ntohs(dns->qr) == 0)//DNS Question
@@ -545,7 +548,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     {
         if(DEBUG==1)
             printf("found\n");
-        //referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
+        referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
         ret = curr_name->n_entry;
     }
     else//devo creare nuova entry
