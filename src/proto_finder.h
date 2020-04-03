@@ -14,6 +14,7 @@
 #include <inttypes.h>
 //#include "proto_mng.h"
 #include "dns_mng.h"
+#include "tls_mng.h"
 
 /* Protocol Port */
 #define FTP_DATA        20
@@ -28,5 +29,5 @@
 
 int proto_detector(struct rte_mbuf *, int, struct ipv4_hdr *, struct ipv6_hdr *, uint16_t , uint16_t);
 int isDns(struct rte_mbuf *, int, struct ipv4_hdr *, struct ipv6_hdr *, uint16_t , uint16_t);
-int isTls(struct rte_mbuf *, int, struct ipv4_hdr *, struct ipv6_hdr *, uint16_t , uint16_t);
+int isTls(struct rte_mbuf *, int, struct ipv4_hdr *, struct ipv6_hdr *);
 #endif /* proto_finder_h */

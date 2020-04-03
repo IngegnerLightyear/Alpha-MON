@@ -6,19 +6,22 @@
 
 void proto_init(int nb_sys_cores)
 {
-	for(int i=0; i<nb_sys_cores; i++)
-	{
-        	for(int j=0; j<MAX_INTERFACES; j++)
-		{
-			flow_db[i][j].bitMap=malloc(FLOW_TABLE_SIZE*sizeof(int));
-			if(flow_db[i][j].bitMap == NULL)
+			flow_db.bitMap=malloc(FLOW_TABLE_SIZE*sizeof(entry_access));
+			if(flow_db.bitMap == NULL)
 				return;
-			flow_db[i][j].table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
-			if(flow_db[i][j].table == NULL)
+			flow_db.table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
+			if(flow_db.table == NULL)
 				return;
-            		table_init(&flow_db[i][j]);
-		}
-	}
+            table_init(&flow_db);
+}
+
+void table_init(hash_struct * data)
+{
+    for(int i=0; i<FLOW_TABLE_SIZE; i++)
+    {
+        data->bitMap[i].number = 0;
+        sem_init(&data->bitMap->permission, 0, 1);
+    }
 }
 
 // For Protocol use:
@@ -48,11 +51,16 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                            if(interface_setting.tls!=0)
+                            /*if(interface_setting.tls!=0)
                             {
-                                //TLS management TODO
+                                if(proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == 443)
+                                {
+                                    printf("A-MON:   client hello\n");
+                                }
+                                else
+                                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
                             }
-                            else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
+                            else*/ if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
                             break;
                 	case UDP:
@@ -69,7 +77,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             {
                                 if(proto_detector(packet, 1, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == DNS)
                                 {
-                                    dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
+                                    dnsEntry(packet, 1, ipv4_header, NULL, newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
                                 }
                                 else
                                     remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
@@ -87,7 +95,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
 	{
 		switch (ipv6_header->proto)
                 {
-                        case TCP:
+                        /*case TCP:
                                 tcp_header = rte_pktmbuf_mtod_offset(packet, struct tcp_hdr *, sizeof(struct ipv6_hdr)+sizeof(struct ether_hdr) );
                                 packet->l4_len = sizeof(*tcp_header);
                                 newPacket.ipv = 6;
@@ -105,7 +113,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
 
                                 if(interface_setting.tls!=0)
                                 {
-                                    //TLS management TODO
+                                    //TODO
                                 }
                                 else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                     remove_payload(packet, sizeof(struct ipv6_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
@@ -129,10 +137,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                                 {
                                     if(newPacket.in_port == DNS || newPacket.out_port == DNS)
                                     {
-                                        /*if(proto_detector(packet, 1, ipv4_header, NULL, newPacket) == DNS)
-                                            dnsEntry(packet, 1, NULL, ipv6_header, newPacket, &flow_db[core][id], interface_setting.alpha, interface_setting.delta, self, id, core);
-                                        else
-                                            remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));*/
+                                        //TODO
                                     }
                                 }
                                 else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
@@ -140,7 +145,7 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                                 break;
                         default:
                                 remove_payload(packet, sizeof(struct ipv6_hdr)+sizeof(struct ether_hdr));
-                                break;
+                                break;*/
                 }
 	}
 }
@@ -163,6 +168,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
     
     /* Retrieve DNS Header */
     dns = dns_header_extractor(packet, protocol, ipv4_header, ipv6_header);
+    
     
     
     if(ntohs(dns->qr) == 0)//DNS Question
@@ -491,14 +497,6 @@ void remove_payload(struct rte_mbuf * packet, size_t offset)
     }
 }
 
-void table_init(hash_struct * data)
-{
-    for(int i=0; i<FLOW_TABLE_SIZE; i++)
-    {
-        data->bitMap[i] = 0;
-    }
-}
-
 //int table_add(hash_struct * data, int hash, flow flow_recv)
 int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int k_delta)
 {
@@ -511,6 +509,9 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     
     found =0;
     name_hash = abs(nameHash(name));
+    
+    sem_wait(&flow_db->bitMap->permission);
+    
     //printf("name hash = %d\n", name_hash);
     curr_name = &flow_db->table[name_hash];
     if(DEBUG==1)
@@ -526,7 +527,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     if(DEBUG==1)
         printf("HASH user = %d\n", user_hash);
     
-    for(i=0; i<flow_db->bitMap[name_hash]; i++)
+    for(i=0; i<flow_db->bitMap[name_hash].number; i++)
     {
         if(strcmp(curr_name->name, name)==0)
         {
@@ -545,14 +546,14 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     {
         if(DEBUG==1)
             printf("found\n");
-        //referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
+        referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
         ret = curr_name->n_entry;
     }
     else//devo creare nuova entry
     {
         if(DEBUG==1)
             printf("new\n");
-        if(flow_db->bitMap[name_hash]==0)
+        if(flow_db->bitMap[name_hash].number==0)
         {
             if(DEBUG==1)
                 printf("bitmap = %d\n", flow_db->bitMap[name_hash]);
@@ -572,7 +573,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
                 printf("%d\n", flow_db->table[name_hash].client_list[user_hash].active);
             referencePage(&flow_db->table[name_hash], flow_recv, user_hash, k_anon, k_delta);
             
-            flow_db->bitMap[name_hash]++;
+            flow_db->bitMap[name_hash].number++;
             ret = flow_db->table[name_hash].n_entry;
         }
         else
@@ -600,11 +601,14 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
             
             referencePage(newName, flow_recv, user_hash, k_anon, k_delta);
             
-            flow_db->bitMap[name_hash]++;
+            flow_db->bitMap[name_hash].number++;
             ret = newName->n_entry;
         }
     }
     if(DEBUG==1)
         printf(" Bitmap @%d = %d\n", name_hash, flow_db->bitMap[name_hash]);
+    
+    sem_post(&flow_db->bitMap->permission);
+    
     return ret;
 }

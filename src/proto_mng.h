@@ -16,11 +16,12 @@
 #include <rte_malloc.h>
 
 //#include "traffic_anon.h"
-
+#include <semaphore.h>
 
 //#include "hash_calculator.h"
 #include <unistd.h>    //getpid
 #include "dns_mng.h"
+#include "tls_mng.h"
 #include "traffic_anon.h"
 #include "hash_calculator.h"
 #include "process_packet.h"
@@ -91,9 +92,15 @@ struct names
     client client_list[MAX_CLIENT];
 } names;
 
+typedef struct entry_access
+{
+    int number;
+    sem_t permission;
+}entry_access;
+
 typedef struct hash_struct
 {
-        int *bitMap;//[FLOW_TABLE_SIZE];
+        entry_access *bitMap;//[FLOW_TABLE_SIZE];
         struct names *table;//[FLOW_TABLE_SIZE];
 } hash_struct;
 
@@ -113,7 +120,7 @@ typedef struct flow
 
 
 /* Variables */
-hash_struct flow_db[MAX_CORES][MAX_INTERFACES];
+hash_struct flow_db;
 
 
 /* Functions for protocols */
