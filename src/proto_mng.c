@@ -526,7 +526,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     {
         if(DEBUG==1)
             printf("found\n");
-        //referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
+        referencePage(curr_name, flow_recv, user_hash, k_anon, k_delta);
         ret = curr_name->n_entry;
     }
     else//devo creare nuova entry
