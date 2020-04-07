@@ -53,39 +53,37 @@ Finally, you must specify the networks to anonymize, writing a subnet file, and 
 
 ### L4-7 Anonymization
 
-You must provide into the configuration file a policy to enable the ⍺-Anonymization in therms of ⍺ parameter (number of time a single name is incountered) and delta (time interval).
+You must provide into the configuration file a policy to enable the ⍺-Anonymization in therms of:
+- ⍺ parameter ;number of time a single name is incountered;
+- delta: time interval.
 
 ## INI file entries
 You must provide a `-c` argument, containing the path of a INI file containing the parameters of the tool.
 Parameters are:
 ```
-[interface_mapping]
-<pci_address_in> = <pci_address_out> ; Describe how packets flow
-
 [general]
-mempool_elem_nb = 32768     ; size of the mempool for packets
-num_config = 3              ; number of available configs
+mempool_elem_nb = 32768                                 ; size of the mempool for packets
+num_config = 1                                          ; number of available configs
 
-[anon_mac]
-enabled = 0/1               ; Enable disable MAC address rewrite
+[group]
+anon_mac = 0/1                                          ; Enable/disable MAC address rewrite
+anon_ip = 0/1                                           ; Enable/disable IP address anonymization
+key_mode = static                                       ; Use a static or rotating key
+key = rK3bSQ7z7VlyEJqYXKgP8n7AAjSes7tPeoJV9gyZ0v4=      ; Static key
+rotation_delay = 86400                                  ; Delay for rotating the key
+anon_subnet_file = sample-conf/subnets.txt              ; File with subnets to anonymize
+engine = 0/1                                            ; Enable anonymization engine
+    dns = 0/1                                           ; Enable ⍺-anon on dns
+    tls = 0/1                                           ; Enable ⍺-anon on tls
+alpha = 3                                               ; Alpha value for anonymization
+delta = 60                                              ; Delta time for Alpha-Anonymization
 
-[anon_ip]
-enabled =  0/1              ; Enable disable IP address anonymization
-key_mode = static/rotate    ; Use a static or rotating key
-key = rF3bSQ7z7VlyEJqYXKgP8n7AAjSes7tPeoJV9gyZ0v4= ; Static key
-rotation_delay = 86400      ; Delay for rotating the key
-anon_subnet_file = sample-conf/subnets.txt ; File with subnets to anonymize
+[interfaces_mappings]
+<pci_address_in> = <pci_address_out>                    ; Describe how packets flow
+ 
+[interface_conf]
+<pci_address_out> = #group                              : Describe output interface config
 
-[anon_l4]
-enabled = 0/1               ; Enable L4 obfuscation
-whitelist_tls = 0/1         ; Whitelist TLS payload
-whitelist_quic = 0/1        ; Whitelist QUIC payload
-whitelist_dns = 0/1         ; Whitelist DNS payload
-whitelist_http = 0/1        ; Whitelist HTTP payload (preserves only some headers)
-
-[a-anon]
-k_anon = 3                  ; Alpha value
-k_delta = 60                ; Time interval
 ```
 
 
