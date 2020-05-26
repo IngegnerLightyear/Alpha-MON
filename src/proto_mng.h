@@ -20,6 +20,7 @@
 
 //#include "hash_calculator.h"
 #include <unistd.h>    //getpid
+#include <pthread.h>
 #include "dns_mng.h"
 #include "tls_mng.h"
 #include "traffic_anon.h"
@@ -95,7 +96,8 @@ struct names
 typedef struct entry_access
 {
     int number;
-    sem_t permission;
+    pthread_mutex_t permission;
+    //sem_t permission;
 }entry_access;
 
 typedef struct hash_struct

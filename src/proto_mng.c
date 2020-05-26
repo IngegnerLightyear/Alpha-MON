@@ -20,7 +20,12 @@ void table_init(hash_struct * data)
     for(int i=0; i<FLOW_TABLE_SIZE; i++)
     {
         data->bitMap[i].number = 0;
-        sem_init(&data->bitMap->permission, 0, 1);
+        //sem_init(&data->bitMap->permission, 0, 1);
+        if (pthread_mutex_init(&data->bitMap[i].permission, NULL) != 0)
+        {
+            printf("\n mutex init failed\n");
+            return;
+        }
     }
 }
 
@@ -510,7 +515,8 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     found =0;
     name_hash = abs(nameHash(name));
     
-    sem_wait(&flow_db->bitMap->permission);
+    //sem_wait(&flow_db->bitMap->permission);
+    pthread_mutex_lock(&flow_db->bitMap[name_hash].permission);
     
     //printf("name hash = %d\n", name_hash);
     curr_name = &flow_db->table[name_hash];
@@ -540,7 +546,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
             break;
     }
     
-    //fprintf(fp, "%d;%d\n", flow_db->bitMap[name_hash], i);
+    //fprintf(fp, "%d;%d\n", flow_db->bitMap[name_hash].number, i);
     //fclose(fp);
     if(found==1)//entry gia' esiste: aggiorno
     {
@@ -608,7 +614,8 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     if(DEBUG==1)
         printf(" Bitmap @%d = %d\n", name_hash, flow_db->bitMap[name_hash]);
     
-    sem_post(&flow_db->bitMap->permission);
+    //sem_post(&flow_db->bitMap->permission);
+     pthread_mutex_unlock(&flow_db->bitMap[name_hash].permission);
     
     return ret;
 }
