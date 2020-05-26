@@ -68,6 +68,7 @@ At this point it is possible to enable, in the form of a whitelist, which protoc
 Finally, if  `engine = 1`, you have to set the alpha and delta values:
 * alpha represents the number of unique users linked to the same name;
 * delta is time interval.
+
 The name will be obfuscated if the number of users linked to the same name is less than alpha in the delta time interval. Otherwise it will be allowed to pass and will be considered as a known name.
 
 ## INI file entries
