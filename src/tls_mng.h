@@ -46,6 +46,8 @@
 #include <rte_tcp.h>
 #include <rte_udp.h>
 
+#include "proto_mng.h"
+
 
 //TLS version numbers
 #define SSL_VERSION_3_0 0x0300
@@ -94,6 +96,7 @@ typedef struct tls_header_v0
 } tls_header_v0;
 
 tls_header_v2 * tls_header_extractor (struct rte_mbuf *, int, struct ipv4_hdr *, struct ipv6_hdr *);
-size_t offset_extractor_tls (int, struct ipv4_hdr *, struct ipv6_hdr *);
+size_t offset_extractor_tls (int, struct ipv4_hdr *, struct ipv6_hdr *, uint8_t);
+//void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, uint8_t offset, flow newPacket, hash_struct *flow_db, int k_anon, int k_delta, crypto_ip *self, int id, int core);
 
 #endif /* tls_mng_h */

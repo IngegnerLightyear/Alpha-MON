@@ -67,31 +67,33 @@ int isTls(struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header,
     tls_header_v2 *tls_h;
     tls_h = tls_header_extractor(packet, protocol, ipv4_header, ipv6_header);
     
+    if (tls_h==NULL)
+        return 1;
     /*for (int i=0; i<12; i++)
     {
         printf("%x|\n", tls_h->val[i]);
     }
     printf("\n");
-    return 1;*/
+    return 1;
     
-    //printf("record type: 0x%02hhx|\n",tls_h->rt);
-//    printf("record type: %u|\n",tls_h->rt);
-//    printf("protocol version: %x|\n",tls_h->protv1);
-//    printf("protocol version: %x|\n",tls_h->protv2);
-//    printf("record length: %x|\n",ntohs(tls_h->rl1));
-//    printf("record length: %x|\n",ntohs(tls_h->rl2));
-//    printf("handshake type: %u|\n",tls_h->ht);
-//    printf("header len1: %u|\n",tls_h->hl1);
-//    printf("header len2: %u|\n",tls_h->hl2);
-//    printf("header len3: %u|\n",tls_h->hl3);
-//    printf("client version: %x|\n",tls_h->c_ver);
+    printf("record type: 0x%02hhx|\n",tls_h->rt);
+    printf("record type: %u|\n",tls_h->rt);
+    printf("protocol version: %x|\n",tls_h->protv1);
+    printf("protocol version: %x|\n",tls_h->protv2);
+    printf("record length: %x|\n",ntohs(tls_h->rl1));
+    printf("record length: %x|\n",ntohs(tls_h->rl2));
+    printf("handshake type: %u|\n",tls_h->ht);
+    printf("header len1: %u|\n",tls_h->hl1);
+    printf("header len2: %u|\n",tls_h->hl2);
+    printf("header len3: %u|\n",tls_h->hl3);
+    printf("client version: %x|\n",tls_h->c_ver);*/
 
-    /*
+    
     if(tls_h->rt!=22)//handshake
         return 1;
-    if (tls_h->protv!=768 && tls_h->protv!=769 && tls_h->protv!=770 && tls_h->protv!=771)//proto version check
+    if (tls_h->protv1!=3 && tls_h->protv2!=1 || tls_h->protv1!=3 && tls_h->protv2!=3)//proto version check
         return 1;
-    if(tls_h->ht!=1)//client hello check*/
+    if(tls_h->ht!=1)//client hello check
         return 1;
     return 0;
 }

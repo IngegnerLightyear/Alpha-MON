@@ -56,16 +56,18 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                            /*if(interface_setting.tls!=0)
+                            if(interface_setting.tls!=0)
                             {
                                 if(proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == 443)
                                 {
-                                    printf("A-MON:   client hello\n");
+                                    //printf("A-MON:   client hello\n");
+                                    //printf("\n");
+                                    tlsHelloEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
                                 }
-                                else
-                                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+                                /*else
+                                    remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));*/
                             }
-                            else*/ if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
+                            else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
                             break;
                 	case UDP:
