@@ -11,13 +11,25 @@
 dns_header * dns_header_extractor (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header)
 {
     //dns_header *dns;
+    size_t len;
     if(ipv4_header!=NULL)
     {
         if(protocol == 0)
-            return rte_pktmbuf_mtod_offset(packet, dns_header*, offset_extractor (protocol, ipv4_header, ipv6_header) );
+        {
+            len = offset_extractor (protocol, ipv4_header, ipv6_header);
+            if(len>=packet->pkt_len)
+                return NULL;
+            else
+                return rte_pktmbuf_mtod_offset(packet, dns_header*, len );
+        }
         else if(protocol == 1)
         {
-            return rte_pktmbuf_mtod_offset( packet, dns_header*, offset_extractor (protocol, ipv4_header, ipv6_header)  );
+            len = offset_extractor (protocol, ipv4_header, ipv6_header);
+            if(len>=packet->pkt_len)
+                return NULL;
+            else
+                return rte_pktmbuf_mtod_offset(packet, dns_header*, len );
+            //return rte_pktmbuf_mtod_offset( packet, dns_header*, offset_extractor (protocol, ipv4_header, ipv6_header)  );
             /*printf("flag: %d, %d", (int)dns->qr, (int)htons(dns->qr));
             printf("\n %d ID.",ntohs(dns->id));
             printf("\n %d Questions.",ntohs(dns->q_count));
@@ -67,15 +79,17 @@ size_t offset_extractor (int protocol, struct ipv4_hdr * ipv4_header, struct ipv
     }
 }*/
 
-/* u_char* */ void ReadName(unsigned char* reader,unsigned char* buffer,int* count)
+/* u_char* */ /*void*/ int ReadName(unsigned char* reader,unsigned char* buffer,int* count)
 {
-    unsigned char *name;
+    unsigned char *name = NULL;
     unsigned int p=0,jumped=0,offset;
     int i , j;
     int cnt, first,ctrl;
  
     *count = 1;
     name = (unsigned char*)malloc(256);
+    if(name==NULL)
+        return 1;
  
     name[0]='\0';
     first=0;
@@ -138,4 +152,5 @@ size_t offset_extractor (int protocol, struct ipv4_hdr * ipv4_header, struct ipv
     name[i-1]='\0'; //remove the last dot
     printf("name: %s\n", name);
     return name;*/
+    return 0;
 }

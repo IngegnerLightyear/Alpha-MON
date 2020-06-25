@@ -122,7 +122,7 @@ typedef struct query
 //Functions
 dns_header * dns_header_extractor (struct rte_mbuf * , int , struct ipv4_hdr *, struct ipv6_hdr *);
 size_t offset_extractor (int, struct ipv4_hdr *, struct ipv6_hdr *);
-/* u_char* */void  ReadName(unsigned char* ,unsigned char* ,int* );
+/* u_char* void*/ int  ReadName(unsigned char* ,unsigned char* ,int* );
 
 
 #endif /* dns_mng_h */

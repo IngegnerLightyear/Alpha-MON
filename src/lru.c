@@ -11,6 +11,11 @@ struct lru* newlru(int client_hash, time_t timestamp)
 {
     // Allocate memory and assign 'pageNumber'
     struct lru* temp = (struct lru*)malloc(sizeof(lru));
+    if(temp==NULL)
+    {
+        return NULL;
+    }
+        
     //struct lru* temp = (struct lru*)rte_malloc(NULL, sizeof(lru), 0);
     temp->client_hash = client_hash;
     temp->timestamp = timestamp;
@@ -29,6 +34,11 @@ void Enqueue(struct names* queue, flow flow_recv, int hash_val, int k_anon, int 
     if(DEBUG==1)
     printf("            IN ENQUEUE\n");
     struct lru* tmp = newlru(hash_val, flow_recv.timestamp);
+    
+    if(tmp==NULL)
+    {
+        return;
+    }
     //tmp->next = queue->head;
     //tmp->prev = NULL;
 
@@ -84,16 +94,28 @@ void prune(struct names *queue, time_t timestamp, int delta)
     struct lru *tmp = queue->tail;
     while(tmp->timestamp < timestamp - delta)
     {
-        if(DEBUG==1)
-        printf("pruning %s", queue->name);
-        queue->tail = tmp->prev;
-        queue->tail->next = NULL;
-        queue->client_list[tmp->client_hash].active = 0;
-        queue->client_list[tmp->client_hash].lru_ptr = NULL;
-        free(tmp);
-        //rte_free(tmp);
-        queue->n_entry--;
-        tmp = queue->tail;
+        //if(DEBUG==1)
+            //printf("pruning %s", queue->name);
+        if(queue->tail == queue->head)
+        {
+            queue->client_list[tmp->client_hash].active = 0;
+            queue->client_list[tmp->client_hash].lru_ptr = NULL;
+            queue->n_entry--;
+            queue->head = queue->tail = NULL;
+            free(tmp);
+            break;
+        }
+        else
+        {
+            queue->tail = tmp->prev;
+            queue->tail->next = NULL;
+            queue->client_list[tmp->client_hash].active = 0;
+            queue->client_list[tmp->client_hash].lru_ptr = NULL;
+            free(tmp);
+            //rte_free(tmp);
+            queue->n_entry--;
+            tmp = queue->tail;
+        }
     }
 }
 

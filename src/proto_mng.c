@@ -170,18 +170,29 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
     ret_info info;
     int ret;
     struct sockaddr_in a;
+    size_t len;
     
     dnslen=packet->pkt_len;
     
     /* Retrieve DNS Header */
     dns = dns_header_extractor(packet, protocol, ipv4_header, ipv6_header);
-    
+    if(dns==NULL)
+    {
+        remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+        return;
+    }
     
     
     if(ntohs(dns->qr) == 0)//DNS Question
     {
         if(DEBUG==1)
             printf("It is DNS question\n");
+        len = offset_extractor(protocol, ipv4_header, ipv6_header);
+        if(len>=packet->pkt_len)
+        {
+            remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+            return;
+        }
         buff = rte_pktmbuf_mtod_offset(packet, char *, offset_extractor(protocol, ipv4_header, ipv6_header));
         buffstart = buff;
         if(DEBUG==1)
@@ -193,7 +204,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
         char c;
 
         int length = *buff++;
-        if(length>=dnslen)
+        if(length>=dnslen-(len+12))
             return;
         else
             dnslen-=length;
@@ -206,7 +217,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 i++;
             }
             length = *buff++;
-            if(length>=dnslen)
+            if(length>=dnslen-(len+12) || i>=NAME_DNS)
                 return;
             else
                 dnslen-=length;
@@ -273,6 +284,12 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
         }
         int n_aut = ntohs(dns->auth_count);
         int n_add = ntohs(dns->add_count);
+        len = offset_extractor(protocol, ipv4_header, ipv6_header);
+        if(len>=packet->pkt_len)
+        {
+            remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));
+            return;
+        }
         buffstart = buff = rte_pktmbuf_mtod_offset(packet, char *, offset_extractor(protocol, ipv4_header, ipv6_header));
         if(DEBUG==1)
             printf("canversione char\n");
@@ -285,7 +302,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
         int i=0;
         char c;
         int length = *buff++;
-        if(length>=dnslen)
+        if(length>=dnslen-(len+12))
             return;
         else
             dnslen-=length;
@@ -298,7 +315,7 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 i++;
             }
             length = *buff++;
-            if(length>=dnslen)
+            if(length>=dnslen-(len+12) || i>=NAME_DNS)
                 return;
             else
                 dnslen-=length;
@@ -335,13 +352,16 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
             int stop = 0;
             if(DEBUG==1)
                 printf("devo ciclare %d volte\n", n_ans);
-
+            len = len+12+strlen(name)+2*sizeof(unsigned short);
+            if(len>=packet->pkt_len)
+                return;
             buff+=2*sizeof(unsigned short);
             
             for(i=0; i<n_ans; i++)
             {
 //                answers[i].name=ReadName(buff,buffstart,&stop);
-                ReadName(buff,buffstart,&stop);
+                if(ReadName(buff,buffstart,&stop)==1)
+                    return;
                 if(DEBUG==1)
                 printf("ANS:    Pars del nome\n");
                 //printf("%s\n", answers[i].name);
@@ -351,6 +371,9 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 printf("ANS:    Pars r_data\n");
                 // MOD for +2 bytes of typedef struct statement
                 //buff += (sizeof(r_data)-2);
+                len = len + (sizeof(unsigned short)+sizeof(unsigned short)+sizeof(unsigned int)+sizeof(unsigned short)) + ntohs(answers[i].resource->data_len);
+                if(len >= packet->pkt_len)
+                    return;
                 buff += (sizeof(unsigned short)+sizeof(unsigned short)+sizeof(unsigned int)+sizeof(unsigned short));
                 if(DEBUG==1)
                 printf("ANS:    Pars r_data->type = %d\n",ntohs(answers[i].resource->type));
@@ -389,7 +412,11 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
                 {
                     if(DEBUG==1)
                     printf("ANS:    Pars CNAME\n");
-                    ReadName(buff,buffstart,&stop);
+                    if(ReadName(buff,buffstart,&stop)==1)
+                        return;
+                    len = len + ntohs(answers[i].resource->data_len);
+                    if(len >= packet->pkt_len)
+                        return;
                     buff+=ntohs(answers[i].resource->data_len);
                 }
                 // TO BE IMPLEMENTED
@@ -413,32 +440,58 @@ void dnsEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_he
             for(i=0; i<n_aut; i++)
             {
 //                auth[i].name=ReadName(buff,buffstart,&stop);
-                ReadName(buff,buffstart,&stop);
+                if(ReadName(buff,buffstart,&stop)==1)
+                    return;
+                len = len + stop;
+                if(len >= packet->pkt_len)
+                    return;
                 buff+=stop;
                 auth[i].resource=(r_data*)(buff);
                 // MOD
+                len = len + (sizeof(r_data)-2);
+                if(len >= packet->pkt_len)
+                    return;
                 buff+=(sizeof(r_data)-2);
                 if(ntohs(auth[i].resource->type)==2)
                 {
 //                auth[i].rdata=ReadName(buff,buffstart,&stop);
-                    ReadName(buff,buffstart,&stop);
+                    if(ReadName(buff,buffstart,&stop)==1)
+                        return;
+                    len = len + stop;
+                    if(len >= packet->pkt_len)
+                        return;
                     buff+=stop;
                 }
                 else
+                {
+                    len = len + ntohs(auth[i].resource->data_len);
+                    if(len >= packet->pkt_len)
+                        return;
                     buff+=ntohs(auth[i].resource->data_len);
+                }
             }
             //read additional
             for(i=0; i<n_add; i++)
             {
 //                addit[i].name=ReadName(buff,buffstart,&stop);
-                ReadName(buff,buffstart,&stop);
+                if(ReadName(buff,buffstart,&stop)==1)
+                    return;
+                len = len + stop;
+                if(len >= packet->pkt_len)
+                    return;
                 buff+=stop;
                 addit[i].resource=(r_data*)(buff);
                 // MOD
+                len = len + (sizeof(r_data)-2);
+                if(len >= packet->pkt_len)
+                    return;
                 buff+=(sizeof(r_data)-2);
                 if(ntohs(addit[i].resource->type)==1)
                 {
 //                    addit[i].rdata = (unsigned char*)malloc(ntohs(addit[i].resource->data_len));
+                    len = len + ntohs(addit[i].resource->data_len);
+                    if(len >= packet->pkt_len)
+                        return;
                     for(int j=0;j<ntohs(addit[i].resource->data_len);j++)
                         addit[i].rdata[j]=buff[j];
                     
@@ -510,18 +563,25 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     uint64_t name_hash;
     int user_hash;
     struct names *curr_name = NULL;
+    struct names *curr = NULL;
     int i, found, ret;
     //FILE *fp;
     //fp=fopen("test.csv", "a+");
+    float probability;
+    int seed;
     
     found =0;
     name_hash = abs(nameHash(name));
+    
+    seed = (int)rte_get_tsc_cycles ();
+    seed =  (214013*seed+2531011);
+    probability = ((seed>>16)&0x7FFF)%100;
     
     //sem_wait(&flow_db->bitMap->permission);
     pthread_mutex_lock(&flow_db->bitMap[name_hash].permission);
     
     //printf("name hash = %d\n", name_hash);
-    curr_name = &flow_db->table[name_hash];
+    curr = curr_name = &flow_db->table[name_hash];
     if(DEBUG==1)
         printf("HASH name = %d\n", name_hash);
     if (flow_recv.ipv==4)
@@ -535,18 +595,126 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
     if(DEBUG==1)
         printf("HASH user = %d\n", user_hash);
     
-    for(i=0; i<flow_db->bitMap[name_hash].number; i++)
+    if(probability<33)//no clean
     {
-        if(strcmp(curr_name->name, name)==0)
+        for(i=0; i<flow_db->bitMap[name_hash].number; i++)
         {
-            found = 1;
-            break;
+            if(strcmp(curr_name->name, name)==0)
+            {
+                found = 1;
+                break;
+            }
+            else if(curr_name->next!=NULL)
+                curr_name = curr_name->next;
+            else
+                break;
         }
-        else if(curr_name->next!=NULL)
-            curr_name = curr_name->next;
-        else
-            break;
     }
+    else if(33<=probability<=66)//partial clean
+    {
+        for(i=0; i<flow_db->bitMap[name_hash].number; i++)
+        {
+            if(strcmp(curr_name->name, name)==0)
+            {
+                //printf("Exit\n");
+                found = 1;
+                break;
+            }
+            else if(curr_name->next!=NULL)
+            {
+                //printf("Next | ");
+                if(i!=0)
+                {
+                    //printf("Not First | ");
+                    if(curr_name->n_entry>0)
+                    {
+                        //printf("Try Prune (%d)| ", curr_name->n_entry);
+                        prune(curr_name, flow_recv.timestamp, k_delta);
+                    }
+                    //printf("Status (%d)| ", curr_name->n_entry);
+                    if(curr_name->n_entry<=0)
+                    {
+                        //printf("To Clean | ");
+                        struct names *tmp = curr_name;
+                        curr_name = curr_name->next;
+                        //printf("New Pointer | ");
+                        if(tmp->prev->prev!=NULL)
+                        {
+                            //printf("Normal Case | ");
+                            curr_name->prev->prev->next = curr_name;
+                            curr_name->prev = curr_name->prev->prev;
+                            //printf("Done | ");
+                        }
+                        else
+                        {
+                            //printf("First Case | ");
+                            tmp->prev->next = curr_name;
+                            curr_name->prev = tmp->prev;
+                            //printf("Done | ");
+                        }
+                        flow_db->bitMap[name_hash].number--;
+                        free(tmp);
+                        //printf("Free | ");
+                    }
+                    else
+                    {
+                        //printf("No Clean | ");
+                        curr_name = curr_name->next;
+                    }
+                }
+                else
+                {
+                    //printf("First | ");
+                    curr_name = curr_name->next;
+                }
+            }
+            else
+                break;
+        }
+    }
+    else//complete clean
+    {
+        for(int j=0; j<flow_db->bitMap[name_hash].number; j++)
+        {
+            if(strcmp(curr->name, name)==0)
+            {
+                curr_name = curr;
+                found = 1;
+                i=j;
+            }
+            else if(curr->next!=NULL)
+            {
+                if(i!=0)
+                {
+                    prune(curr, flow_recv.timestamp, k_delta);
+                    if(curr->n_entry<=0)
+                    {
+                        struct names *tmp = curr;
+                        curr = curr->next;
+                        if(tmp->prev->prev!=NULL)
+                        {
+                            curr->prev->prev->next = curr;
+                            curr->prev = curr_name->prev->prev;
+                        }
+                        else
+                        {
+                            tmp->prev->next = curr;
+                            curr->prev = tmp->prev;
+                        }
+                        flow_db->bitMap[name_hash].number--;
+                        free(tmp);
+                    }
+                    else
+                        curr = curr->next;
+                }
+                else
+                    curr = curr->next;
+            }
+            else
+                break;
+        }
+    }
+    
     
     //fprintf(fp, "%d;%d\n", flow_db->bitMap[name_hash].number, i);
     //fclose(fp);
@@ -588,29 +756,36 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
         {
             //struct names *newName = rte_malloc(NULL, sizeof(names), 0);
             struct names *newName = malloc(sizeof(names));
-            curr_name->next = newName;
-            newName->prev = curr_name;
-            newName->next = NULL;
-            newName->n_entry=0;
-            newName->n_client=0;
             
-            newName->head=NULL;
-            newName->tail=NULL;
-            
-            newName->full = 1;
-            strcpy(newName->name, name);
-            newName->oldest=flow_recv.timestamp;
-            
-            for(int rescue = 0; rescue<MAX_CLIENT; rescue++)
+            if(newName!=NULL)
             {
-                newName->client_list[rescue].active=0;
-                newName->client_list[rescue].lru_ptr=NULL;
+                
+                curr_name->next = newName;
+                newName->prev = curr_name;
+                newName->next = NULL;
+                newName->n_entry=0;
+                newName->n_client=0;
+                
+                newName->head=NULL;
+                newName->tail=NULL;
+                
+                newName->full = 1;
+                strcpy(newName->name, name);
+                newName->oldest=flow_recv.timestamp;
+                
+                for(int rescue = 0; rescue<MAX_CLIENT; rescue++)
+                {
+                    newName->client_list[rescue].active=0;
+                    newName->client_list[rescue].lru_ptr=NULL;
+                }
+                
+                referencePage(newName, flow_recv, user_hash, k_anon, k_delta);
+                
+                flow_db->bitMap[name_hash].number++;
+                ret = newName->n_entry;
             }
-            
-            referencePage(newName, flow_recv, user_hash, k_anon, k_delta);
-            
-            flow_db->bitMap[name_hash].number++;
-            ret = newName->n_entry;
+            else
+                ret = 0;
         }
     }
     if(DEBUG==1)
