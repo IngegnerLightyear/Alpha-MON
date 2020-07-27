@@ -98,6 +98,7 @@ typedef struct out_interface_sett
   int engine;
   int dns;
   int tls;
+  int http;
   int alpha;
   int delta;
 } out_interface_sett;

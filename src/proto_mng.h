@@ -27,6 +27,7 @@
 #include "hash_calculator.h"
 #include "process_packet.h"
 
+
 /* Protocol Type */
 #define TCP             0x06
 #define UDP    	        0x11
@@ -119,7 +120,7 @@ typedef struct flow
     time_t timestamp;
 } flow;
 
-
+#include "flow_mng.h"
 
 /* Variables */
 hash_struct flow_db;

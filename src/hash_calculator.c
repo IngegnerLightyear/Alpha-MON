@@ -11,7 +11,8 @@ uint64_t Uint128High64(const __uint128_t x) { return (x >> 64); }
 
 int getHash(__uint128_t sip, __uint128_t dip, uint16_t sp, uint16_t dp, uint8_t ptl, int max_dim)
 {
-    int dsp = dip ^ sip;
+    return (sip ^ dip ^ sp ^ dp ^ ptl)%max_dim;
+    /*int dsp = dip ^ sip;
     int dsp_h16 = (dsp & 0xffff0000) >> 16;
     int dsp_l16 = dsp & 0x0000ffff;
     int dspt_h16_s = dsp_h16 ^ sp;
@@ -21,7 +22,8 @@ int getHash(__uint128_t sip, __uint128_t dip, uint16_t sp, uint16_t dp, uint8_t 
     int dsp_m = ( dsp16 & 0x00f0) >> 4;
     int dsp4 = dsp_h ^ dsp_m;
     int dsp12 = dsp_h | (dsp4 << 8);
-    return  (dsp12 >> 4)%max_dim;
+    return  (dsp12 >> 4)%max_dim;*/
+    //old
     /*printf("%d ... %d ... %d ... %d ... %d\n", abs(sip),abs(dip),abs(sp),abs(dp),abs(ptl));
     return (int)abs((sip*dip*sp*dp*ptl)%1000);*/
 }

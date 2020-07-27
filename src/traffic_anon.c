@@ -112,6 +112,7 @@ static int main_loop(__attribute__((unused)) void * arg){
             printf("CHECK:          engine -> %d\n", out_interface[port_cnt].engine);
             printf("CHECK:              dns -> %d\n", out_interface[port_cnt].dns);
             printf("CHECK:              tls -> %d\n", out_interface[port_cnt].tls);
+            printf("CHECK:              http -> %d\n", out_interface[port_cnt].http);
             printf("CHECK:          alpha -> %d\n", out_interface[port_cnt].alpha);
             printf("CHECK:          delta -> %d\n", out_interface[port_cnt].delta);
             printf("\n");
@@ -533,6 +534,9 @@ printf("CHECK:  section %s, name %s\n", section ,name);
                 }else if (strcmp(name, "tls") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
                 config[ret].tls = atoi(value);
+                }else if (strcmp(name, "http") == 0) {
+                printf ("ANON:     [%s] %s: %s\n", section,name,value);
+                config[ret].http = atoi(value);
                 }
 		/* K-anon */
 		else if (strcmp(name, "alpha") == 0) {

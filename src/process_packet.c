@@ -74,16 +74,16 @@ void process_packet_eth (struct rte_mbuf * packet, out_interface_sett interface_
         printf("\n");
     } 
 
-    /*if (interface_setting.anon_mac_enabled == 1){
+    if (interface_setting.anon_mac_enabled == 2){
 
-	uint8_t *bytes = uint8_t[ETHER_ADDR_LEN];
-	bytes = (uint8_t) tp.tv_sec;
+	//uint8_t *bytes = uint8_t[ETHER_ADDR_LEN];
+	//bytes = (uint8_t) tp.tv_sec;
 
-        eth_hdr->s_addr = eth_hdr->d_addr = (struct ether_addr ) bytes;
+        eth_hdr->s_addr = eth_hdr->d_addr = (struct ether_addr ) {(uint8_t) tp.tv_sec,(uint8_t) tp.tv_sec,(uint8_t) tp.tv_sec,(uint8_t) tp.tv_sec,(uint8_t) tp.tv_sec,(uint8_t) tp.tv_sec};
         if ( VERBOSE > 0)
             printf("ANON:    MAC addresses timestamped\n");
     }
-    else*/
+    else
     if (interface_setting.anon_mac_enabled == 1)
     {
         eth_hdr->s_addr = eth_hdr->d_addr = (struct ether_addr ) {'\0','\0','\0','\0','\0','\0'};

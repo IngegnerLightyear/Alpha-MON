@@ -6,13 +6,14 @@
 
 void proto_init(int nb_sys_cores)
 {
-			flow_db.bitMap=malloc(FLOW_TABLE_SIZE*sizeof(entry_access));
-			if(flow_db.bitMap == NULL)
-				return;
-			flow_db.table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
-			if(flow_db.table == NULL)
-				return;
-            table_init(&flow_db);
+    flow_db.bitMap=malloc(FLOW_TABLE_SIZE*sizeof(entry_access));
+    if(flow_db.bitMap == NULL)
+        return;
+    flow_db.table=malloc(FLOW_TABLE_SIZE*sizeof(struct names));
+    if(flow_db.table == NULL)
+        return;
+    table_init(&flow_db);
+    flow_table_init();
 }
 
 void table_init(hash_struct * data)
@@ -40,6 +41,8 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
     uint16_t src_port;
     uint16_t dst_port;
     int curr_hit;
+    int flag;
+    int detected_proto;
 
 	if(ipv4_header!=NULL)//ipv4
 	{
@@ -56,16 +59,40 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
-                            if(interface_setting.tls!=0)
+                            detected_proto = proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port);
+                
+                            if(detected_proto == 443)
                             {
-                                if(proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port) == 443)
-                                {
-                                    //printf("A-MON:   client hello\n");
-                                    //printf("\n");
-                                    tlsHelloEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
-                                }
+                                    if(interface_setting.tls!=0)
+                                    {
+                                        struct table_flow *flusso = reference_flow(&newPacket);
+                                        if(flusso->toAnon==-1 || flusso->toAnon==1)
+                                        {
+                                            flag = tlsHelloEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
+                                            if(flag!=0)
+                                                flusso->toAnon==1;
+                                            else
+                                                flusso->toAnon==0;
+                                        }
+                                    }
                                 /*else
                                     remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct udp_hdr));*/
+                            }
+                            else if(detected_proto == 80)
+                            {
+                                    if(interface_setting.http!=0)
+                                    {
+                                        struct table_flow *flusso = reference_flow(&newPacket);
+                                        if(flusso->toAnon==-1 || flusso->toAnon==1)
+                                        {
+                                            flag = httpEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
+                                            if(flag!=0)
+                                                flusso->toAnon==1;
+                                            else
+                                                flusso->toAnon==0;
+                                        }
+                                    }
+                                
                             }
                             else if(newPacket.in_port != SSH && newPacket.in_port != HTTPS  && newPacket.out_port != SSH && newPacket.out_port != HTTPS)
                                 remove_payload(packet, sizeof(struct ipv4_hdr)+sizeof(struct ether_hdr)+sizeof(struct tcp_hdr));
@@ -694,7 +721,7 @@ int table_add(hash_struct *flow_db, flow flow_recv, char * name, int k_anon, int
                         if(tmp->prev->prev!=NULL)
                         {
                             curr->prev->prev->next = curr;
-                            curr->prev = curr_name->prev->prev;
+                            curr->prev = curr->prev->prev;//da controllare: curr->prev = curr_name->prev->prev;
                         }
                         else
                         {

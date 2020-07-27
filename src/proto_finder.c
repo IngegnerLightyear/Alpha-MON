@@ -14,11 +14,19 @@
 int proto_detector(struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, uint16_t inport, uint16_t outport)
 {
     if(isDns(packet, protocol, ipv4_header, ipv6_header, inport, outport)==0)
+    {
+        //printf("DNS!!!\n");
         return 53;
+    }
     else if(isTls(packet, protocol, ipv4_header, ipv6_header)==0)
     {
-//        printf("TLS!!!\n");
+         //printf("TLS!!!\n");
          return 443;
+    }
+    else if(isHttp(packet, protocol, ipv4_header, ipv6_header)==0)
+    {
+        //printf("HTTP!!!\n");
+        return 80;
     }
     else
         return 0;
@@ -96,4 +104,20 @@ int isTls(struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header,
     if(tls_h->ht!=1)//client hello check
         return 1;
     return 0;
+}
+
+int isHttp(struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header)
+{
+    char *pkt;
+    pkt = http_header_extractor(packet, protocol, ipv4_header, ipv6_header);
+    
+    //printf("HTTP: %s\n", pkt);
+    
+    //http:get-post
+    if(strcasestr(pkt, "GET")==NULL && strcasestr(pkt, "POST")==NULL)
+    {
+        return 1;
+    }
+    return 0;
+    
 }

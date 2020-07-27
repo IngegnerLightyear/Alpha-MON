@@ -44,7 +44,7 @@ size_t offset_extractor_tls (int protocol, struct ipv4_hdr * ipv4_header, struct
 
 
 
-void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, uint8_t offset, flow newPacket, hash_struct *flow_db, int k_anon, int k_delta, crypto_ip *self, int id, int core)
+int tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, uint8_t offset, flow newPacket, hash_struct *flow_db, int k_anon, int k_delta, crypto_ip *self, int id, int core)
 {
     /*char *buff = NULL;
     char *buffstart = NULL, *buffpay=NULL;
@@ -63,6 +63,7 @@ void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ip
     unsigned char *bytes = NULL;
     bytes = rte_pktmbuf_mtod_offset(packet, char *, offset_extractor_tls(protocol, ipv4_header, ipv6_header, offset));
     int ret = 0;
+    int flag = 0;
     unsigned char *curr;
     unsigned char sidlen = bytes[43];
     curr = bytes + 1 + 43 + sidlen;
@@ -95,6 +96,7 @@ void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ip
                 printf("Returned: %d\n", ret);
             if(ret < k_anon)
             {
+                flag++;
                 if(DEBUG==1)
                     printf("Removing: %s --> len: %d\n", curr, namelen);
                 for (int j = 0; j < namelen; j++)
@@ -105,7 +107,7 @@ void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ip
                         *curr++;
                 }
             }
-            return;
+            return flag;
             //return (char*)curr;
         }
         else curr += ext_len;
@@ -114,7 +116,7 @@ void tlsHelloEntry (struct rte_mbuf * packet, int protocol, struct ipv4_hdr * ip
     {
         if(DEBUG==1)
             printf("incomplete SSL Client Hello\n");
-        return; //SNI was not present
+        return flag; //SNI was not present
     }
 //}
     

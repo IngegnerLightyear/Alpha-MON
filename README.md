@@ -1,4 +1,6 @@
 # ⍺-MON
+## Anonymized Passive Traffic Monitoring
+
 ⍺-MON anonymizes network traffic in real time. It is based on DPDK.
 This software process network traffic on input interfaces to remove privacy sensitive information transmitted in clear by protocols.
 Then, it transmits anonymized traffic on the output interfaces.
@@ -28,11 +30,9 @@ Just run with:
 sudo ./build/a_mon -c COREMASK [-b PCI_ADDR] -- -c <ini_file>
 ```
 * `COREMASK`: The core where to bind the program. **It needs consecutive cores starting from Core0**
-* `PCI_ADDR`: The port(s) where to send. If not present, it sends the same traffic to every port.
+* `PCI_ADDR`: The port(s) to be ignored from the console information.
 
 The parameters before `--` are DPDK enviroment related. See its guide for further explaination.
-
-By default, it uses all cores and NICs of your system. Check DPDK parameters to control this behavior.
 
 ## How it works
 
@@ -50,7 +50,10 @@ Mappings are specified in the INI file under the section `[interface_mapping]`, 
 
 ### MAC Anonymization
 
-You can delete MAC addresses by specifying `anon_mac = 1 ` in the `[group]` section of the INI file.
+You can manage MAC addresses by specifying  in the `[group]` section of the INI file:
+*  `anon_mac = 0`: the module is disabled;
+*  `anon_mac = 1`: delets the MAC addresses;
+*  `anon_mac = 2`: replaces the MAC addresses with a timestamp.
 
 ### IP Anonymization
 
@@ -63,13 +66,30 @@ Finally, you must specify the networks to anonymize, writing a subnet file, and 
 
 ### L4-7 Anonymization
 
+#### Engine
+
 You must provide into the configuration file a policy to enable the ⍺-Anonymization Engine by setting `engine = 1`.
 At this point it is possible to enable, in the form of a whitelist, which protocols must undergo the anonymization process and which can be ignored: just enter the value `0/1` in correspondence with the supported protocol.
-Finally, if  `engine = 1`, you have to set the alpha and delta values:
-* alpha represents the number of unique users linked to the same name;
-* delta is time interval.
+Finally, if  `engine = 1`, you have to set the `alpha` and `delta` values:
+* `alpha` represents the number of unique users linked to the same name;
+* `delta` is time interval.
 
-The name will be obfuscated if the number of users linked to the same name is less than alpha in the delta time interval. Otherwise it will be allowed to pass and will be considered as a known name.
+The potentially sensitive information will be obfuscated if the number of users linked to the same name is less than `alpha` in the `delta` time interval. Otherwise it will be allowed to pass and will be considered as known.
+
+#### Flow Management
+
+By default the `flow management`module is activated, in order to keep the behavior of the modules consistent within the same flow:
+* if the first packet was subject to anonymization (since `alpha` is below threshold), the rest of the flow will be subject to anonymization, until its closure or expiration;
+* if the first packet was not subject to anonymization (since `alpha` is above the threshold), no packet of the flow will be subject to anonymization, until its closure or expiration;
+
+#### Anonymization modules
+
+If the `engine` is enabled, a `DPI Module` is deployed in order to detect the protocol contained in the current packet.
+The following modules can be deployed to apply ⍺-Anonymization:
+* `Dns Protocol Managment`: if triggered, hides all kind of names (preserving their structure, as defined in RFCs) inside the `DNS` queries and responses and obfuscates IP address in a prefix-preserving manner;
+* `Tls Protocol Managment`: if triggered, hides the SNI inside the `TLS Client Hello` packet;
+* `Http Protocol Managment`: if triggred, hides fields (preserving their structure, as defined in RFCs) inside `HTTP` packets that can lead to a particular web page;
+* `Unsafe protocol`: is triggered automatically if the protocol is not encrypted or is "unknown" (it doesn't match the ones managed by the implemented modules), deleting the packet payload.
 
 ## INI file entries
 You must provide a `-c` argument, containing the path of a INI file containing the configuration parameters.
@@ -79,7 +99,7 @@ mempool_elem_nb = 32768                                 ; size of the mempool fo
 num_config = 1                                          ; number of available configs
 
 [group]
-anon_mac = 0/1                                          ; Enable/disable MAC address rewrite
+anon_mac = 0/1/2                                        ; Enable/disable MAC address rewrite
 anon_ip = 0/1                                           ; Enable/disable IP address anonymization
 key_mode = static                                       ; Use a static or rotating key
 key = rK3bSQ7z7VlyEJqYXKgP8n7AAjSes7tPeoJV9gyZ0v4=      ; Static key
@@ -88,6 +108,7 @@ anon_subnet_file = sample-conf/subnets.txt              ; File with subnets to a
 engine = 0/1                                            ; Enable anonymization engine
     dns = 0/1                                           ; Enable ⍺-anon on dns
     tls = 0/1                                           ; Enable ⍺-anon on tls
+    http = 0/1                                          ; Enable ⍺-anon on http
 alpha = 3                                               ; Alpha value for anonymization
 delta = 60                                              ; Delta time for Alpha-Anonymization
 
