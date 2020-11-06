@@ -96,6 +96,7 @@ typedef struct out_interface_sett
   int anon_ip_rotation_delay;
   char anon_subnet_file [MAX_STR];
   int engine;
+  int anon_ext_ip;
   int dns;
   int tls;
   int http;

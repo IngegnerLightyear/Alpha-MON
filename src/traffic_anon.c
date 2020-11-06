@@ -110,6 +110,7 @@ static int main_loop(__attribute__((unused)) void * arg){
             printf("CHECK:          anon_ip_key -> %s\n", out_interface[port_cnt].anon_ip_key);
             printf("CHECK:          anon_subnet_file -> %s\n", out_interface[port_cnt].anon_subnet_file);
             printf("CHECK:          engine -> %d\n", out_interface[port_cnt].engine);
+            printf("CHECK:              external_ip -> %d\n", out_interface[port_cnt].anon_ext_ip);
             printf("CHECK:              dns -> %d\n", out_interface[port_cnt].dns);
             printf("CHECK:              tls -> %d\n", out_interface[port_cnt].tls);
             printf("CHECK:              http -> %d\n", out_interface[port_cnt].http);
@@ -528,6 +529,9 @@ printf("CHECK:  section %s, name %s\n", section ,name);
                 else if (strcmp(name, "engine") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
                 config[ret].engine = atoi(value);
+                }else if (strcmp(name, "external_ip") == 0) {
+                printf ("ANON:     [%s] %s: %s\n", section,name,value);
+                config[ret].anon_ext_ip = atoi(value);
                 }else if (strcmp(name, "dns") == 0) {
                 printf ("ANON:     [%s] %s: %s\n", section,name,value);
                 config[ret].dns = atoi(value);

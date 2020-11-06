@@ -105,6 +105,12 @@ void process_packet_ip (struct rte_mbuf * packet, out_interface_sett interface_s
     struct ether_hdr *eth_hdr;
     struct ipv4_hdr * ipv4_header;
     struct ipv6_hdr * ipv6_header;
+    //ip origin work as flag src-dst
+    //00 -> int-int
+    //11 -> ext-ext
+    //01 -> int-ext
+    //10 -> ext-int
+    int ip_origin = 0;
 
     len = rte_pktmbuf_data_len(packet);
     eth_hdr = rte_pktmbuf_mtod(packet, struct ether_hdr *);
@@ -135,10 +141,18 @@ void process_packet_ip (struct rte_mbuf * packet, out_interface_sett interface_s
                     src_addr.s_addr = retrieve_crypto_ip(&crypto_data[core][id], &src_addr, id, core);
 		            ipv4_header->src_addr = src_addr.s_addr;
                 }
+                else
+                {
+                    ip_origin+=10;
+                }
                 if (internal_ip(dst_addr))
                 {
                     dst_addr.s_addr = retrieve_crypto_ip(&crypto_data[core][id], &dst_addr, id, core);
                     ipv4_header->dst_addr = dst_addr.s_addr;
+                }
+                else
+                {
+                    ip_origin+=1;
                 }
 
                 if ( VERBOSE > 0)
@@ -150,7 +164,7 @@ void process_packet_ip (struct rte_mbuf * packet, out_interface_sett interface_s
         }
         /* Apply K-anon */
         if(interface_setting.engine!=0)
-            multiplexer_proto(ipv4_header, NULL,  packet, core, tp, id, interface_setting, &crypto_data[core][id]);
+            multiplexer_proto(ipv4_header, NULL,  packet, core, tp, id, interface_setting, &crypto_data[core][id], ip_origin);
     }
     /* Is IPv6 */
     else if(ether_type == 0x86DD){

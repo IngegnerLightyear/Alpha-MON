@@ -33,7 +33,7 @@ void table_init(hash_struct * data)
 // For Protocol use:
 // 0 = TCP
 // 1 = UDP
-void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, out_interface_sett interface_setting, crypto_ip *self)
+void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_header, struct rte_mbuf * packet, int core, struct timespec tp, int id, out_interface_sett interface_setting, crypto_ip *self, int ip_origin)
 {
     struct tcp_hdr * tcp_header;
     struct udp_hdr * udp_header;
@@ -43,7 +43,8 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
     int curr_hit;
     int flag;
     int detected_proto;
-
+    struct table_flow *flusso = NULL;
+    
 	if(ipv4_header!=NULL)//ipv4
 	{
         	switch (ipv4_header->next_proto_id)
@@ -59,20 +60,40 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
 
+                            if(interface_setting.anon_ext_ip == 1)
+                            {
+                                if(ip_origin==1 || ip_origin==10)
+                                {
+                                    flusso = reference_flow(&newPacket);
+                                    if(flusso->toAnon==-1 || flusso->toAnon==1)
+                                    {
+                                        flag = external_ip(packet, tp, ip_origin, flusso, &flow_db, newPacket, interface_setting.alpha, interface_setting.delta);
+                                        if(flag!=0)
+                                        {
+                                            flusso->toAnon=1;
+                                        }
+                                        else
+                                        {
+                                            flusso->toAnon=0;
+                                        }
+                                    }
+                                }
+                            }
+                
                             detected_proto = proto_detector(packet, 0, ipv4_header, NULL, newPacket.in_port, newPacket.out_port);
                 
                             if(detected_proto == 443)
                             {
                                     if(interface_setting.tls!=0)
                                     {
-                                        struct table_flow *flusso = reference_flow(&newPacket);
+                                        flusso = reference_flow(&newPacket);
                                         if(flusso->toAnon==-1 || flusso->toAnon==1)
                                         {
                                             flag = tlsHelloEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
                                             if(flag!=0)
-                                                flusso->toAnon==1;
+                                                flusso->toAnon=1;
                                             else
-                                                flusso->toAnon==0;
+                                                flusso->toAnon=0;
                                         }
                                     }
                                 /*else
@@ -82,14 +103,14 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             {
                                     if(interface_setting.http!=0)
                                     {
-                                        struct table_flow *flusso = reference_flow(&newPacket);
+                                        flusso = reference_flow(&newPacket);
                                         if(flusso->toAnon==-1 || flusso->toAnon==1)
                                         {
                                             flag = httpEntry(packet, 0, ipv4_header, NULL, tcp_header->data_off,newPacket, &flow_db, interface_setting.alpha, interface_setting.delta, self, id, core);
                                             if(flag!=0)
-                                                flusso->toAnon==1;
+                                                flusso->toAnon=1;
                                             else
-                                                flusso->toAnon==0;
+                                                flusso->toAnon=0;
                                         }
                                     }
                                 
@@ -106,6 +127,22 @@ void multiplexer_proto(struct ipv4_hdr * ipv4_header, struct ipv6_hdr * ipv6_hea
                             newPacket.out_port = htons(udp_header->dst_port);
                             newPacket.protocol = ipv4_header->next_proto_id;
                             newPacket.timestamp = tp.tv_sec;
+                
+                            if(interface_setting.anon_ext_ip == 1)
+                            {
+                                if(ip_origin==1 || ip_origin==10)
+                                {
+                                    flusso = reference_flow(&newPacket);
+                                    if(flusso->toAnon==-1 || flusso->toAnon==1)
+                                    {
+                                        external_ip(packet, tp, ip_origin, &flusso, &flow_db, newPacket, interface_setting.alpha, interface_setting.delta);
+                                        if(flag!=0)
+                                            flusso->toAnon==1;
+                                        else
+                                            flusso->toAnon==0;
+                                    }
+                                }
+                            }
                 
                             if(interface_setting.dns!=0)
                             {

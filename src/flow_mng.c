@@ -43,10 +43,12 @@ struct table_flow * reference_flow(flow * data)
         hash = getHash(data->ipv4_src, data->ipv4_dst, data->in_port, data->out_port, data->protocol, TCP_UDP_FLOWS);
     else
         hash = getHash(data->ipv6_src, data->ipv6_dst, data->in_port, data->out_port, data->protocol, TCP_UDP_FLOWS);
-    
     pthread_mutex_lock(&flow_struct.bitMap[hash].permission);
     
     curr = &flow_struct.table[hash];
+    seed = (int)rte_get_tsc_cycles ();
+    seed =  (214013*seed+2531011);
+    probability = ((seed>>16)&0x7FFF)%100;
     
     //find flow
     while(curr!=NULL)
@@ -63,9 +65,6 @@ struct table_flow * reference_flow(flow * data)
                         break;
                     }
         //garbage collection
-        seed = (int)rte_get_tsc_cycles ();
-        seed =  (214013*seed+2531011);
-        probability = ((seed>>16)&0x7FFF)%100;
         if(probability>50)
         {
             if(data->timestamp - curr->timestamp > T_OUT)

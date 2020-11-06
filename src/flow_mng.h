@@ -25,8 +25,10 @@ struct table_flow
     int ipv;
     uint32_t ipv4_src;
     uint32_t ipv4_dst;
+    uint32_t ipv4_anon;
     __uint128_t ipv6_src;
     __uint128_t ipv6_dst;
+    uint8_t ipv6_anon[16];
     uint16_t in_port;
     uint16_t out_port;
     uint8_t  protocol;

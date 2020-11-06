@@ -19,7 +19,7 @@ CFLAGS += -DSUPPORT_IPV6
 
 # all source are stored in SRCS-y
 SRCS-y := src/traffic_anon.c
-SRCS-y += src/ini.c src/process_packet.c src/crypto_ip.c src/rijndael.c src/ip_utils.c src/proto_mng.c src/lru.c src/dns_mng.c src/hash_calculator.c src/proto_finder.c src/tls_mng.c src/flow_mng.c src/http_mng.c
+SRCS-y += src/ini.c src/process_packet.c src/crypto_ip.c src/rijndael.c src/ip_utils.c src/proto_mng.c src/lru.c src/dns_mng.c src/hash_calculator.c src/proto_finder.c src/tls_mng.c src/flow_mng.c src/http_mng.c src/ext-ip_mng.c
 # SRCS-y += src/ini.c src/process_packet.c src/crypto_ip.c src/ip_utils.c
 VPATH := src
 
