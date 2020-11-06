@@ -109,7 +109,7 @@ key = rK3bSQ7z7VlyEJqYXKgP8n7AAjSes7tPeoJV9gyZ0v4=      ; Static key
 rotation_delay = 86400                                  ; Delay for rotating the key
 anon_subnet_file = sample-conf/subnets.txt              ; File with subnets to anonymize
 engine = 0/1                                            ; Enable anonymization engine
-    external_ip = 1                                     ; Enable ⍺-anon on external IP addresses
+    external_ip = 0/1                                   ; Enable ⍺-anon on external IP addresses
     dns = 0/1                                           ; Enable ⍺-anon on dns
     tls = 0/1                                           ; Enable ⍺-anon on tls
     http = 0/1                                          ; Enable ⍺-anon on http
