@@ -1,4 +1,4 @@
-![A-mon Logo](https://github.com/IngegnerLightyear/Alpha-MON/blob/master/A-mon_logo.png){:height="50%" width="50%"}
+![A-mon Logo](https://github.com/IngegnerLightyear/Alpha-MON/blob/master/A-mon_logo.png)
 # ⍺-MON
 ## Anonymized Passive Traffic Monitoring
 
