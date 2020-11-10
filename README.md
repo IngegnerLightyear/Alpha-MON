@@ -1,4 +1,4 @@
-![alt text](https://github.com/IngegnerLightyear/Alpha-MON/blob/master/A-mon_logo.png?raw=true | width=50)
+![](https://github.com/IngegnerLightyear/Alpha-MON/blob/master/A-mon_logo.png?raw=true | width=50)
 # ⍺-MON
 ## Anonymized Passive Traffic Monitoring
 
