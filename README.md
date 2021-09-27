@@ -89,7 +89,7 @@ By default the `flow management`module is activated, in order to keep the behavi
 
 If the `engine` is enabled, a `DPI Module` is deployed in order to detect the protocol contained in the current packet.
 The following modules can be deployed to apply ⍺-Anonymization:
-`External IP Managment`: if enabled, it will apply the ⍺-Anonymization on external IP addresses consistently, otherwise the anonymization will be performed only by CryptoPan;
+* `External IP Managment`: if enabled, it will apply the ⍺-Anonymization on external IP addresses consistently, otherwise the anonymization will be performed only by CryptoPan;
 * `Dns Protocol Managment`: if triggered, hides all kind of names (preserving their structure, as defined in RFCs) inside the `DNS` queries and responses and obfuscates IP address in a prefix-preserving manner;
 * `Tls Protocol Managment`: if triggered, hides the SNI inside the `TLS Client Hello` packet;
 * `Http Protocol Managment`: if triggred, hides fields (preserving their structure, as defined in RFCs) inside `HTTP` packets that can lead to a particular web page;
